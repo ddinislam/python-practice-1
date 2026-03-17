@@ -1,4 +1,4 @@
-for me: this code calculates a student's academic performance and scholarship. Student AITU
+for me: this code calculates a student's academic performance and scholarship. Student AITU.
 
 
 print( "==============================")
