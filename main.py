@@ -28,6 +28,6 @@ if avg > 90:
     print("Scholarship: 35000KZT")
 else:
     print("you dont have scholarship( ")
+print("Scholarship:", avg >= 90)
+print("Perfect score:", avg == 100)
 print("==============================")
-
-
