@@ -1,62 +1,135 @@
-print("==============================")
-print("      STUDENT REPORT CARD     ")
-print("==============================")
+import os
+import csv
+import json
 
-name = input("Student: ")
+class FileManager:
+    def __init__(self, filename):
+        self.filename = filename
 
-x = float(input("Math: "))
-if x < 0 or x > 100:
-    print("error the grade will be at 0 to 100!")
-    exit()
+    def check_file(self):
+        """Проверка наличия файла данных."""
+        print("Checking file...")
+        if os.path.exists(self.filename):
+            print(f"File found: {self.filename}")
+            return True
+        else:
+            print(f"Error: {self.filename} not found.")
+            return False
 
-y = float(input("Physics: "))
-if y < 0 or y > 100:
-    print("error the grade will be at 0 to 100!")
-    exit()
+    def create_output_folder(self, folder='output'):
+        """Создание папки для результатов."""
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            print(f"Output folder created: {folder}/")
+        else:
+            print(f"Output folder already exists: {folder}/")
 
-z = float(input("Python: "))
-if z < 0 or z > 100:
-    print("error the grade will be at 0 to 100!")
-    exit()
+class DataLoader:
+    def __init__(self, filename):
+        self.filename = filename
+        self.students = []
 
-print("------------------------------")
+    def load(self):
+        """Загрузка 10,000 строк из CSV."""
+        print("Loading data...")
+        try:
+            with open(self.filename, mode='r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                self.students = [row for row in reader]
+            print(f"Data loaded successfully: {len(self.students)} students")
+            return self.students
+        except Exception as e:
+            print(f"Error loading data: {e}")
+            return []
 
-avg = (x + y + z) / 3
-avg = round(avg, 2)
-print("Average:", avg)
+    def preview(self, n=5):
+        """Вывод первых 5 строк (student_id, age, gender, country, GPA)."""
+        print(f"First {n} rows:")
+        print("-" * 50)
+        for s in self.students[:n]:
+            print(f"{s['student_id']} | {s['age']} | {s['gender']} | {s['country']} | GPA: {s['GPA']}")
+        print("-" * 50)
 
-if avg >= 90:
-    grade = "A"
-elif avg >= 75:
-    grade = "B"
-elif avg >= 60:
-    grade = "C"
-elif avg >= 50:
-    grade = "D"
-else:
-    grade = "F"
+class DataAnalyser:
+    def __init__(self, students):
+        self.students = students
+        self.result = []
 
-print("Letter grade:", grade)
+    def analyse(self):
+        """Вариант D: Поиск ТОП-10 по финальному экзамену."""
+        valid_students = []
+        for s in self.students:
+            try:
+                s['final_exam_score'] = float(s['final_exam_score'])
+                s['GPA'] = float(s['GPA'])
+                valid_students.append(s)
+            except (ValueError, KeyError):
+                continue
 
-scholarship = (x >= 70 and y >= 70 and z >= 70 and avg >= 90)
-print("Scholarship:", scholarship)
+        sorted_students = sorted(valid_students, key=lambda x: x['final_exam_score'], reverse=True)
+        self.result = sorted_students[:10]
+        return self.result
 
-grades = [x, y, z]
-subjects = ["Math", "Physics", "Python"]
+    def run_extra_logic(self):
+        """Lambda, Filter, Map (требование Практики 5)."""
+        top_gpa = list(filter(lambda s: float(s['GPA']) >= 4.0, self.valid_data_helper()))
+        print(f"Students with 4.0 GPA: {len(top_gpa)}")
 
-for i in range(len(grades)):
-    if grades[i] >= 90:
-        print(subjects[i] + ":", "Excellent")
-    elif grades[i] >= 75:
-        print(subjects[i] + ":", "Good")
-    elif grades[i] >= 60:
-        print(subjects[i] + ":", "Satisfactory")
-    else:
-        print(subjects[i] + ":", "Fail")
 
-print("------------------------------")
-print("Name uppercase:", name.upper())
-print("Name lowercase:", name.lower())
-print("Name length:", len(name))
-print("Masked name:", name.replace(name[0], "*", 1))
-print("==============================")
+        countries = list(map(lambda s: s['country'], self.students[:5]))
+        print(f"Sample countries: {countries}")
+        print("-" * 50)
+
+    def valid_data_helper(self):
+        """Помощник для безопасного перевода в float."""
+        res = []
+        for s in self.students:
+            try:
+                s['GPA'] = float(s['GPA'])
+                res.append(s)
+            except: continue
+        return res
+
+    def print_results(self):
+        print("TOP 10 STUDENTS BY EXAM SCORE (Variant D):")
+        for i, s in enumerate(self.result, 1):
+            print(f"{i}. ID: {s['student_id']} | Score: {s['final_exam_score']} | GPA: {s['GPA']} | Major: {s['major']}")
+        print("-" * 50)
+
+class ResultSaver:
+    def __init__(self, data, path):
+        self.data = data
+        self.path = path
+
+    def save(self):
+        """saving in JSON."""
+        try:
+            with open(self.path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4)
+            print(f"Successfully saved to {self.path}")
+        except Exception as e:
+            print(f"Save error: {e}")
+
+def main():
+    csv_file = 'global_university_students_performance_habits_10000.csv'
+    
+    fm = FileManager(csv_file)
+    if not fm.check_file():
+        return
+    fm.create_output_folder()
+
+    dl = DataLoader(csv_file)
+    data = dl.load()
+    if not data: return
+    dl.preview()
+
+    analyser = DataAnalyser(data)
+    analyser.run_extra_logic()
+    analyser.analyse()
+    analyser.print_results()
+
+    saver = ResultSaver(analyser.result, 'output/result.json')
+    saver.save()
+
+if __name__ == "__main__":
+    main()
